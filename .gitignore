@@ -1,0 +1,37 @@
+# --- Secrets & Config ---
+.env
+.env.*
+
+# --- Python & Virtual Environments ---
+venv/
+.venv/
+env/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+*.sqlite3
+.ipynb_checkpoints/
+*.egg-info/
+*.py[cod]
+*$py.class
+
+# --- Mac OS System Files ---
+.DS_Store
+
+# --- Project Specific Data ---
+data/*.csv
+data/**/*.csv
+
+# --- IDEs ---
+.vscode/
+.idea/
+
+# --- Local Caches ---
+.cache/
+models/
+
+# --- Build & Distribution ---
+dist/
+build/

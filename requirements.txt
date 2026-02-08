@@ -1,0 +1,21 @@
+langchain_openai
+langchain_core
+langchain
+streamlit
+langchain_community
+uvicorn
+sse_starlette
+huggingface_hub 
+tiktoken
+sentence_transformers==2.2.2
+pinecone-client
+Flask
+gunicorn
+unicorn
+python-dotenv
+markdown
+ctransformers==0.2.5
+datasets
+pyarrow
+huggingface_hub
+-e .
