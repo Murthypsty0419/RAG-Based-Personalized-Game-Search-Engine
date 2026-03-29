@@ -43,42 +43,42 @@ Game search often depends on rigid filters. This project lets users describe int
 ## Combined Flow (ASCII)
 
 ```text
-        (RUNTIME)                        (INDEX BUILD)
-
-+-----------------------+               +---------------+
-|     PLAYER INPUT      |               |  GAME CORPUS  |
-+-----------+-----------+               +-------+-------+
-            |                                   |
-            v                                   v
-+-----------------------+           +-----------------------+
-|    NATURAL QUERY      |           |   INGEST + NORMALIZE  |
-+-----------+-----------+           +-----------+-----------+
-            |                         |                   |
-            v                         v                   v
-+-----------------------+     +-------------+         +-------------+
-|     INTENT VECTORS    |     | TEXT CHUNKS |  . . .  | TEXT CHUNKS |
-+-----------+-----------+     +-------------+         +-------------+
-            |                             |             |
-            v                             v             v
-+-----------------------+              +------------------+
-|     VECTOR STORE      | <- feeds +   | SEMANTIC VECTORS |
-+-----------+-----------+          |   +--------+---------+
-            |                      |            |
-            v                      |            v
-+-----------------------+          |  +--------------------+
-|      TOP MATCHES      |          |  | INDEX CONSTRUCTION |
-+-----------+-----------+          |  +----------+---------+
-            |                      |             |
-            v                      +-------------+
-+-----------------------+                                      
-|   RESPONSE ENGINE     |
-|       (LLAMA2)        |
-+-----------+-----------+
-            |
-            v
-+-----------------------+
-|    FINAL RESPONSE     |
-+-----------------------+
+                          (RUNTIME)                        (INDEX BUILD)
+                  
+                  +-----------------------+               +---------------+
+                  |     PLAYER INPUT      |               |  GAME CORPUS  |
+                  +-----------+-----------+               +-------+-------+
+                              |                                   |
+                              v                                   v
+                  +-----------------------+           +-----------------------+
+                  |    NATURAL QUERY      |           |   INGEST + NORMALIZE  |
+                  +-----------+-----------+           +-----------+-----------+
+                              |                         |                   |
+                              v                         v                   v
+                  +-----------------------+     +-------------+         +-------------+
+                  |     INTENT VECTORS    |     | TEXT CHUNKS |  . . .  | TEXT CHUNKS |
+                  +-----------+-----------+     +-------------+         +-------------+
+                              |                             |             |
+                              v                             v             v
+                  +-----------------------+              +------------------+
+                  |     VECTOR STORE      | <- feeds +   | SEMANTIC VECTORS |
+                  +-----------+-----------+          |   +--------+---------+
+                              |                      |            |
+                              v                      |            v
+                  +-----------------------+          |  +--------------------+
+                  |      TOP MATCHES      |          |  | INDEX CONSTRUCTION |
+                  +-----------+-----------+          |  +----------+---------+
+                              |                      |             |
+                              v                      +-------------+
+                  +-----------------------+                                      
+                  |   RESPONSE ENGINE     |
+                  |       (LLAMA2)        |
+                  +-----------+-----------+
+                              |
+                              v
+                  +-----------------------+
+                  |    FINAL RESPONSE     |
+                  +-----------------------+
 ```
 
 ## API Surface (Flask)
@@ -98,6 +98,11 @@ curl -X POST -d "msg=I want a story-driven sci-fi game" http://localhost:10000/g
 - "Co-op horror game with short sessions"
 - "Open world RPG with crafting and base building"
 - "Narrative-heavy game set in space"
+
+## UI Preview
+
+![Chat Interface Preview](static/images/demo.png)
+
 
 ## Setup and Environment
 
@@ -133,9 +138,6 @@ The indexing flow is in [store_index.py](store_index.py). It builds vectors for 
 8. Real-time trends as a boost signal for fresh picks.
 9. Faster batch indexing with parallel embedding.
 
-## UI Preview
-
-![Chat Interface Preview](static/images/demo.png)
 
 ## Run Locally
 
