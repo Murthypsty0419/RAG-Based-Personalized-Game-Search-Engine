@@ -18,13 +18,21 @@ def index():
 def chat():
     chat_history=[]
     msg = request.form["msg"]
-    input = msg
-    print(input)
-    result,chat_history=chatbot(input,chat_history)
-    result= markdown.markdown(result)
-    print('history:',chat_history)
-    print("Response : ", result)
-    return str(result)
+    user_input = msg
+    print(user_input)
+    try:
+        result,chat_history = chatbot(user_input, chat_history)
+        result = markdown.markdown(result)
+        print('history:', chat_history)
+        print("Response : ", result)
+        return str(result)
+    except Exception as exc:
+        app.logger.exception("Chat request failed")
+        return (
+            "The request could not be completed right now. "
+            "If you are using Ollama, ensure it is running and reachable.",
+            500,
+        )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

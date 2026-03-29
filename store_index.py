@@ -2,7 +2,10 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 from tqdm.auto import tqdm
-from pinecone import Pinecone
+try:
+    from pinecone import Pinecone
+except ImportError:
+    from pinecone.pinecone import Pinecone
 from src.helper import download_hugging_face_embedding
 
 load_dotenv()

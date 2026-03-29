@@ -1,11 +1,15 @@
 from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
-from  pinecone import Pinecone
+try:
+    from pinecone import Pinecone
+except ImportError:
+    from pinecone.pinecone import Pinecone
 import time
 from dotenv import load_dotenv
 import os
 from langchain_ollama import OllamaLLM
+import re
 
 load_dotenv() 
 PINECONE_API_KEY =os.environ.get('PINECONE_API_KEY')
@@ -40,6 +44,34 @@ embeddings = download_hugging_face_embedding()
 pc=Pinecone(PINECONE_API_KEY)
 index = pc.Index(index)
 limit=3070
+
+def clean_query(query: str) -> str:
+    cleaned = query.strip()
+    cleaned = re.sub(r"\b\d{1,2}:\d{2}\b", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+def detect_intent(query: str) -> str:
+    intent_prompt = (
+        "Classify this user message into exactly one label: social-chat, game-request, or other.\n"
+        "Definitions:\n"
+        "- social-chat: greetings, thanks, small talk, capability questions.\n"
+        "- game-request: asks for game recommendations or game information.\n"
+        "- other: anything else.\n"
+        f"Message: {query}\n"
+        "Return only one label."
+    )
+    try:
+        label = llm.invoke(intent_prompt).strip().lower()
+    except Exception:
+        return "other"
+
+    if "social-chat" in label:
+        return "social-chat"
+    if "game-request" in label:
+        return "game-request"
+    return "other"
+
 def retrieve(query,conversation_history):
     vector=embeddings.embed_query(query)
     # get relevant contexts
@@ -57,15 +89,14 @@ def retrieve(query,conversation_history):
         print("Timed out waiting for contexts to be retrieved.")
         contexts = ["No contexts retrieved. Try to answer the question yourself!"]
 
-    # Updated prompt_start (The "Guardrails")
+    # Game-answer guardrails for retrieval mode.
     prompt_start = (
         "You are a Game Recommendation Expert. Your goal is to provide accurate information based ONLY on the provided database context.\n\n"
         "RULES:\n"
-        "1. If the user is just being social (greeting, small talk, thanking you), Respond to this social message politely as a game expert:\n" \
-        "2. Or if they are asking for a game recommendation or game information, then use ONLY the provided Context to answer the question.\n"
-        "3. If the context contains a game that matches the user's request (e.g., matching the genre or theme), recommend it. If no match is found, say you don't have information on that yet.\n"        
-        "4. When recommending a game, always start by stating the 'Game Title' found in the context.\n"
-        "5. Do not invent details. If the context is missing info, don't guess.\n\n"
+        "1. Use ONLY the provided Context to answer the game-related question.\n"
+        "2. If context does not truly support the request, say you do not have enough information yet.\n"
+        "3. When recommending a game, start with the exact 'Game Title' from context.\n"
+        "4. Do not invent details. If info is missing, don't guess.\n\n"
         "Context:\n"
     )
 
@@ -96,14 +127,43 @@ def retrieve(query,conversation_history):
     return prompt
 
 def complete(prompt):
-    # Use .invoke() instead of calling the object directly
-    response = llm.invoke(prompt)
-    return response
+    # If Ollama is not running, return a clear message instead of crashing the request.
+    try:
+        response = llm.invoke(prompt)
+        return response
+    except Exception as exc:
+        err = str(exc).lower()
+        if "connection refused" in err or "failed to connect" in err:
+            return (
+                "I can retrieve game context, but the local LLM service is not reachable. "
+                "Please start Ollama (`ollama serve`) and make sure the model is available "
+                "with `ollama pull llama2`."
+            )
+        raise
 
 def chatbot(query,chat_history):
-    query_with_contexts = retrieve(query,chat_history)
-    print(query_with_contexts)
-    response=complete(query_with_contexts)
+    query = clean_query(query)
+    intent = detect_intent(query)
+
+    if intent == "social-chat":
+        social_prompt = (
+            "You are a Game Recommendation Expert. "
+            "Respond naturally and briefly to this social/capability message. "
+            "Do not recommend games unless the user asks for recommendations.\n"
+            f"Message: {query}\n"
+            "Answer:"
+        )
+        response = complete(social_prompt)
+    elif intent == "game-request":
+        query_with_contexts = retrieve(query,chat_history)
+        print(query_with_contexts)
+        response = complete(query_with_contexts)
+    else:
+        response = (
+            "I can help with game recommendations and game information. "
+            "Tell me what type of game you want, for example genre, mood, or theme."
+        )
+
     chat_history.append({"role": "user", "content":query})
     chat_history.append({"role": "assistant", "content": response})
     return response,chat_history
